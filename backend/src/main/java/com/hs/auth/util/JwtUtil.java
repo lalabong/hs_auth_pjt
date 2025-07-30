@@ -52,7 +52,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    // JWT 토큰에서 사용자명 추출
+    // JWT 토큰에서 사용자명(이메일) 추출
     public String getUsernameFromToken(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(secretKey)

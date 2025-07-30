@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -26,7 +25,7 @@ import com.hs.auth.constants.AppConstants;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -36,14 +35,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String jwt = getJwtFromRequest(request);
 
         if (StringUtils.hasText(jwt) && jwtUtil.validateToken(jwt)) {
-            String username = jwtUtil.getUsernameFromToken(jwt);
+            try {
+                // JWT에서 userId 추출
+                Long userId = jwtUtil.getUserIdFromToken(jwt);
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails,
-                    null, userDetails.getAuthorities());
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                // userId로 사용자 정보 로드
+                UserDetails userDetails = userDetailsService.loadUserById(userId);
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null, userDetails.getAuthorities());
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                log.debug("JWT 인증 성공: userId={}", userId);
+            } catch (Exception e) {
+                log.error("JWT 인증 실패: {}", e.getMessage());
+                // 인증 실패 시 SecurityContext를 클리어하지 않고 계속 진행
+                // (다른 인증 방식이 있을 수 있으므로)
+            }
         }
 
         filterChain.doFilter(request, response);

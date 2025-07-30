@@ -44,21 +44,21 @@ public class JwtUtil {
         Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
-                .setSubject(email) // subject는 이메일로 유지 (호환성)
+                .subject(email) // subject는 이메일로 유지 (호환성)
                 .claim(AppConstants.Http.USER_ID_CLAIM, userId) // 커스텀 claim으로 사용자 ID 추가
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(secretKey, SignatureAlgorithm.HS512)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(secretKey)
                 .compact();
     }
 
     // JWT 토큰에서 사용자명 추출
     public String getUsernameFromToken(String token) {
         Claims claims = Jwts.parser()
-                .setSigningKey(secretKey)
+                .verifyWith(secretKey)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
 
         return claims.getSubject();
     }
@@ -66,10 +66,10 @@ public class JwtUtil {
     // JWT 토큰에서 사용자 ID 추출
     public Long getUserIdFromToken(String token) {
         Claims claims = Jwts.parser()
-                .setSigningKey(secretKey)
+                .verifyWith(secretKey)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
 
         return claims.get(AppConstants.Http.USER_ID_CLAIM, Long.class);
     }
@@ -96,9 +96,9 @@ public class JwtUtil {
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
-                    .setSigningKey(secretKey)
+                    .verifyWith(secretKey)
                     .build()
-                    .parseClaimsJws(token);
+                    .parseSignedClaims(token);
             return true;
         } catch (SecurityException | MalformedJwtException e) {
             log.error(AppConstants.Messages.JWT_SIGNATURE_INVALID);

@@ -28,7 +28,7 @@ public class CookieUtil {
     // Refresh Token Cookie 삭제
     public static void clearRefreshTokenCookie(HttpServletResponse response) {
         Cookie refreshTokenCookie = new Cookie(AppConstants.Http.REFRESH_TOKEN_COOKIE_NAME, null);
-        refreshTokenCookie.setHttpOnly(false);
+        refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setSecure(false);
         refreshTokenCookie.setPath("/auth");
         refreshTokenCookie.setMaxAge(0); // 즉시 만료
